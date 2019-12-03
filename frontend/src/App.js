@@ -1,6 +1,14 @@
 import React from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import {Breadcrumb, Col, Container, Image, ListGroup, Pagination, Row} from "react-bootstrap";
+import Button from "react-bootstrap/Button";
+import Form from "react-bootstrap/Form";
+import Container from "react-bootstrap/Container";
+import Row from "react-bootstrap/Row";
+import Col from "react-bootstrap/Col";
+import Breadcrumb from "react-bootstrap/Breadcrumb";
+import ListGroup from "react-bootstrap/ListGroup";
+import Pagination from "react-bootstrap/Pagination";
+import Image from "react-bootstrap/Image";
 
 function App() {
     return (
@@ -8,7 +16,8 @@ function App() {
             <Container>
                 <Row style={{padding: '1em 0'}}>
                     <Col>
-                        <h1>Bebej, Jakub - Slovenská štátnosť v rokoch 1939-1945</h1>
+                        <h2>Bebej, Jakub - Slovenská štátnosť v rokoch 1939-1945</h2>
+                        <h5>diplomova praca</h5>
                     </Col>
                 </Row>
                 <Row>
@@ -22,6 +31,7 @@ function App() {
                 </Row>
                 <Row>
                     <Col lg={4}>
+                        <h4>Kapitoly</h4>
                         <ListGroup style={{marginBottom: '1em'}}>
                             <ListGroup.Item active>Introduction</ListGroup.Item>
                             <ListGroup.Item>The origin of Catalan numbersup.</ListGroup.Item>
@@ -32,12 +42,22 @@ function App() {
                             <ListGroup.Item>What I found out</ListGroup.Item>
                             <ListGroup.Item>Conclusion</ListGroup.Item>
                         </ListGroup>
+                        <h4>Navigacia</h4>
+                        <Form>
+                            <Form.Group controlId="formBasicEmail">
+                                <Form.Control type="number" placeholder="cislo strany"/>
+                            </Form.Group>
+
+                            <Button variant="primary" type="submit">
+                                Prejst na stranu
+                            </Button>
+                        </Form>
                     </Col>
 
                     <Col lg={8}>
                         <Row>
                             <Col>
-                                <Image src="https://place-hold.it/820x840" rounded style={{width: '100%'}} />
+                                <Image src="https://is.muni.cz/th/rtekt/posudek_oponenta.jpg" rounded style={{width: '100%'}} />
                             </Col>
                         </Row>
 
