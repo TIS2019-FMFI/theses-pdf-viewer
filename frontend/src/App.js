@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
@@ -11,6 +11,14 @@ import Pagination from "react-bootstrap/Pagination";
 import Image from "react-bootstrap/Image";
 
 function App() {
+    let [id, setId] = useState(null);
+    let [metadata, setMetadata] = useState(null);
+    let [currentPage, setCurrentPage] = useState(null);
+
+    useEffect(async () => {
+        setMetadata(await getMetadata(id));
+    }, [metadata]);
+
     return (
         <div className="App">
             <Container>
