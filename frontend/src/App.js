@@ -9,30 +9,66 @@ import Breadcrumb from "react-bootstrap/Breadcrumb";
 import ListGroup from "react-bootstrap/ListGroup";
 import Pagination from "react-bootstrap/Pagination";
 import Image from "react-bootstrap/Image";
+import {documentTypeName, getMetadata, getPage} from "./api";
+import Spinner from "react-bootstrap/Spinner";
+
+function Chapters({chapters}) {
+    return chapters.map(it => {
+        return <ListGroup.Item key={it.name}>{it.name}</ListGroup.Item>
+    })
+}
+
+function DocumentPagination({pages, currentPage, goTo}) {
+    return (<Pagination style={{justifyContent: 'center'}}>
+        <Pagination.First onClick={() => goTo(0)}/>
+        <Pagination.Prev onClick={() => goTo(currentPage - 1)}/>
+        {[...Array(5).keys()]
+            .map(it => currentPage + (it - 2))
+            .filter(it => it > 0 && it < pages)
+            .map(it => <Pagination.Item key={it} onClick={() => goTo(it)}>{it}</Pagination.Item>)
+        }
+        <Pagination.Next onClick={() => goTo(currentPage + 1)}/>
+        <Pagination.Last onClick={() => goTo(pages)}/>
+    </Pagination>)
+}
 
 function App() {
     let [id, setId] = useState(null);
     let [metadata, setMetadata] = useState(null);
-    let [currentPage, setCurrentPage] = useState(null);
+    let [page, setPage] = useState(null);
+    let [pageUrl, setPageUrl] = useState(null);
 
-    useEffect(async () => {
-        setMetadata(await getMetadata(id));
-    }, [metadata]);
+    useEffect(() => {
+        (async () => {
+            setMetadata(await getMetadata(id));
+            setPage(0);
+        })();
+    }, [id]);
+
+    useEffect(() => {
+        (async () => {
+            setPageUrl(await getPage(id, page));
+        })();
+    }, [id, page]);
+
+    if (metadata == null) {
+        return <Spinner animation="border"/>
+    }
 
     return (
         <div className="App">
             <Container>
                 <Row style={{padding: '1em 0'}}>
                     <Col>
-                        <h2>Bebej, Jakub - Slovenská štátnosť v rokoch 1939-1945</h2>
-                        <h5>diplomova praca</h5>
+                        <h2>{metadata.author} - {metadata.title}</h2>
+                        <h5>{documentTypeName(metadata.type)}</h5>
                     </Col>
                 </Row>
                 <Row>
                     <Col>
                         <Breadcrumb>
                             <Breadcrumb.Item href="#">Kniznicny system</Breadcrumb.Item>
-                            <Breadcrumb.Item href="#">Slovenská štátnosť v rokoch 1939-1945</Breadcrumb.Item>
+                            <Breadcrumb.Item href="#">{metadata.title}</Breadcrumb.Item>
                             <Breadcrumb.Item active>Viewer</Breadcrumb.Item>
                         </Breadcrumb>
                     </Col>
@@ -41,19 +77,12 @@ function App() {
                     <Col lg={4}>
                         <h4>Kapitoly</h4>
                         <ListGroup style={{marginBottom: '1em'}}>
-                            <ListGroup.Item active>Introduction</ListGroup.Item>
-                            <ListGroup.Item>The origin of Catalan numbersup.</ListGroup.Item>
-                            <ListGroup.Item>Various encounters with Catalan numbers</ListGroup.Item>
-                            <ListGroup.Item>Hankel matrices (and Catalan numbers)</ListGroup.Item>
-                            <ListGroup.Item>Hidden Markov model</ListGroup.Item>
-                            <ListGroup.Item>Implementation</ListGroup.Item>
-                            <ListGroup.Item>What I found out</ListGroup.Item>
-                            <ListGroup.Item>Conclusion</ListGroup.Item>
+                            <Chapters chapters={metadata.chapters}/>
                         </ListGroup>
                         <h4>Navigacia</h4>
                         <Form>
                             <Form.Group controlId="formBasicEmail">
-                                <Form.Control type="number" placeholder="cislo strany"/>
+                                <Form.Control type="number" placeholder="cislo strany" value={page}/>
                             </Form.Group>
 
                             <Button variant="primary" type="submit">
@@ -65,23 +94,14 @@ function App() {
                     <Col lg={8}>
                         <Row>
                             <Col>
-                                <Image src="https://is.muni.cz/th/rtekt/posudek_oponenta.jpg" rounded style={{width: '100%'}} />
+                                {(pageUrl == null) ? <Spinner animation="border"/> :
+                                    <Image src={pageUrl} rounded style={{width: '100%'}}/>}
                             </Col>
                         </Row>
 
                         <Row style={{marginTop: '1em'}}>
                             <Col>
-                                <Pagination style={{justifyContent: 'center'}}>
-                                    <Pagination.First />
-                                    <Pagination.Prev />
-                                    <Pagination.Item>{1}</Pagination.Item>
-                                    <Pagination.Item>{2}</Pagination.Item>
-                                    <Pagination.Item>{3}</Pagination.Item>
-                                    <Pagination.Item>{4}</Pagination.Item>
-                                    <Pagination.Item>{5}</Pagination.Item>
-                                    <Pagination.Next />
-                                    <Pagination.Last />
-                                </Pagination>
+                                <DocumentPagination currentPage={page} pages={metadata.pages} goTo={(p) => setPage(p)}/>
                             </Col>
                         </Row>
                     </Col>
