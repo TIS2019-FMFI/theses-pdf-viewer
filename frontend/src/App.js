@@ -37,6 +37,7 @@ function App() {
     let [metadata, setMetadata] = useState(null);
     let [page, setPage] = useState(null);
     let [pageUrl, setPageUrl] = useState(null);
+    let [goToPageNumber, setGoToPageNumber] = useState(1);
 
     useEffect(() => {
         (async () => {
@@ -82,13 +83,15 @@ function App() {
                         <h4>Navigacia</h4>
                         <Form>
                             <Form.Group controlId="formBasicEmail">
-                                <Form.Control type="number" placeholder="cislo strany" value={page}/>
-                            </Form.Group>
+                                <Form.Control type="number" placeholder="cislo strany" value={goToPageNumber}
+                                              onChange={(ev) => setGoToPageNumber(ev.target.value)}/>
+                            </Form.Group>a
 
-                            <Button variant="primary" type="submit">
-                                Prejst na stranu
-                            </Button>
                         </Form>
+
+                        <Button variant="primary" type="submit" onClick={() => setPage(parseInt(goToPageNumber))}>
+                            Prejst na stranu
+                        </Button>
                     </Col>
 
                     <Col lg={8}>
