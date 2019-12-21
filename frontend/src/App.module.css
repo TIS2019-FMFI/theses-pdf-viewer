@@ -1,0 +1,22 @@
+.imageLoading {
+    display: block;
+    min-height: 900px;
+    background: #fafafa;
+    border-radius: 4px;
+    justify-content: center;
+    align-items: center;
+}
+
+.blockInteraction {
+    pointer-events: none;
+    user-select: none;
+}
+
+.blocker {
+    background: transparent;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+}

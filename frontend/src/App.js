@@ -11,13 +11,24 @@ import Pagination from "react-bootstrap/Pagination";
 import Image from "react-bootstrap/Image";
 import {documentTypeName, getMetadata, getPage} from "./api";
 import Spinner from "react-bootstrap/Spinner";
+import styles from './App.module.css';
+import {useLocation} from "./hooks";
+import queryString from 'query-string';
 
-function Chapters({chapters}) {
+
+/**
+ * Renders list of chapters of the document.
+ */
+function Chapters({chapters, setPageFunction}) {
     return chapters.map(it => {
-        return <ListGroup.Item key={it.name}>{it.name}</ListGroup.Item>
+        return <ListGroup.Item action key={it.name}
+                               onClick={() => setPageFunction(it.pages[0])}>{it.name}</ListGroup.Item>
     })
 }
 
+/**
+ * Renders pagination of the document.
+ */
 function DocumentPagination({pages, currentPage, goTo}) {
     return (<Pagination style={{justifyContent: 'center'}}>
         <Pagination.First onClick={() => goTo(0)}/>
@@ -32,23 +43,66 @@ function DocumentPagination({pages, currentPage, goTo}) {
     </Pagination>)
 }
 
+/**
+ * Renders loading while image is loading and then renders the image in non-copiable way.
+ */
+function LoadingImage({src}) {
+    const [loading, setLoading] = useState(true);
+    const [prevSrc, setPrevSrc] = useState(null);
+
+    if (prevSrc !== src) {
+        setLoading(true);
+        setPrevSrc(src);
+    }
+
+    return (
+        <>
+            <div className={styles.imageLoading} style={{display: loading ? 'flex' : 'none'}}>
+                <Spinner animation="border"/>
+            </div>
+            <div style={{display: loading ? 'none' : 'block'}}>
+                <Image className={styles.blockInteraction}
+                       src={src}
+                       rounded
+                       style={{width: '100%'}}
+                       onLoad={() => setLoading(false)}
+                />
+                <div className={styles.blocker}/>
+            </div>
+        </>
+    );
+}
+
+/**
+ * Renders whole viewer application.
+ */
 function App() {
+    let location = useLocation();
     let [id, setId] = useState(null);
     let [metadata, setMetadata] = useState(null);
-    let [page, setPage] = useState(null);
+    let [page, setPage] = useState(0);
     let [pageUrl, setPageUrl] = useState(null);
-    let [goToPageNumber, setGoToPageNumber] = useState(1);
+    let [goToPageNumber, setGoToPageNumber] = useState("");
+
+    useEffect(() => {
+        const params = queryString.parse(location.search);
+        setId(params.id || 'invalid-document');
+    }, [location]);
 
     useEffect(() => {
         (async () => {
-            setMetadata(await getMetadata(id));
-            setPage(0);
+            if (id !== null) {
+                setMetadata(await getMetadata(id));
+                setPage(0);
+            }
         })();
     }, [id]);
 
     useEffect(() => {
         (async () => {
-            setPageUrl(await getPage(id, page));
+            if (id !== null) {
+                setPageUrl(await getPage(id, page));
+            }
         })();
     }, [id, page]);
 
@@ -76,20 +130,21 @@ function App() {
                 </Row>
                 <Row>
                     <Col lg={4}>
-                        <h4>Kapitoly</h4>
-                        <ListGroup style={{marginBottom: '1em'}}>
-                            <Chapters chapters={metadata.chapters}/>
-                        </ListGroup>
+                        {metadata.chapters && <>
+                            <h4>Kapitoly</h4>
+                            <ListGroup style={{marginBottom: '1em'}}>
+                                <Chapters chapters={metadata.chapters} setPageFunction={setPage}/>
+                            </ListGroup>
+                        </>}
                         <h4>Navigacia</h4>
-                        <Form>
-                            <Form.Group controlId="formBasicEmail">
-                                <Form.Control type="number" placeholder="cislo strany" value={goToPageNumber}
-                                              onChange={(ev) => setGoToPageNumber(ev.target.value)}/>
-                            </Form.Group>a
-
-                        </Form>
-
-                        <Button variant="primary" type="submit" onClick={() => setPage(parseInt(goToPageNumber))}>
+                        <Form.Group controlId="formBasicEmail">
+                            <Form.Control type="number" placeholder="cislo strany" value={goToPageNumber}
+                                          onChange={(ev) => setGoToPageNumber(ev.target.value)}/>
+                        </Form.Group>
+                        <Button variant="primary" type="submit" onClick={() => {
+                            setPage(parseInt(goToPageNumber));
+                            setGoToPageNumber("");
+                        }}>
                             Prejst na stranu
                         </Button>
                     </Col>
@@ -97,8 +152,7 @@ function App() {
                     <Col lg={8}>
                         <Row>
                             <Col>
-                                {(pageUrl == null) ? <Spinner animation="border"/> :
-                                    <Image src={pageUrl} rounded style={{width: '100%'}}/>}
+                                <LoadingImage src={pageUrl}/>
                             </Col>
                         </Row>
 
