@@ -1,26 +1,25 @@
+const baseUrl = 'http://158.195.10.50:8080'; // bez lomky na konci
+
 // spravi request na backend a vrati metadata dokumentu `documentId`
 export async function getMetadata(documentId) {
-    console.log('getMetadata', documentId);
+    const resp = await fetch(`${baseUrl}/metadata?praca=${documentId}`);
+    const text = await resp.text();
+    if (text.trim() === '') {
+        throw Error("Invalid document id or specified document does not exist!");
+    }
+
+    const props = Object.fromEntries(text.split("\n")
+        .map(it => it.trim())
+        .filter(it => it !== '')
+        .map(it => it.split(":").map(it => it.trim())));
+
+    console.log(props);
 
     return {
-        pages: 35,
-        title: 'Verejná správa a jej charakteristické črty',
-        author: 'Danko Andrej',
+        pages: props['Pages'],
+        title: '',
+        author: props['Author'],
         type: 'drz',
-        chapters: [
-            {
-                name: 'Uvod',
-                pages: [0, 10]
-            },
-            {
-                name: 'Jadro',
-                pages: [11, 20]
-            },
-            {
-                name: 'Zaver',
-                pages: [20, 35]
-            }
-        ]
     }
 }
 
@@ -29,7 +28,7 @@ export async function getPage(documentId, page) {
     console.log('getPage', documentId, page);
 
     if (page < 0) return null;
-    return 'https://www.nrsr.sk/web/dynamic/PoslanecPhoto.aspx?PoslanecID=929&random=' + Math.random();
+    return `${baseUrl}/index?praca=${documentId}&strana=${(1+page).toString().padStart(3, '0')}`;
 }
 
 /**

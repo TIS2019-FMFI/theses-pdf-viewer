@@ -14,6 +14,7 @@ import Spinner from "react-bootstrap/Spinner";
 import styles from './App.module.css';
 import {useLocation} from "./hooks";
 import queryString from 'query-string';
+import Alert from "react-bootstrap/esm/Alert";
 
 
 /**
@@ -30,16 +31,38 @@ function Chapters({chapters, setPageFunction}) {
  * Renders pagination of the document.
  */
 function DocumentPagination({pages, currentPage, goTo}) {
+    let startPage = currentPage - 2;
+    let endPage = currentPage + 2;
+
+    if (startPage < 0) {
+        startPage = 0;
+        endPage = 4;
+    }
+    if (endPage > pages - 1) {
+        startPage = pages - 5;
+        endPage = pages - 1;
+    }
+
+    function* range(start, end) {
+        for (let i = start; i <= end; i++) {
+            yield i;
+        }
+    }
+
     return (<Pagination style={{justifyContent: 'center'}}>
         <Pagination.First onClick={() => goTo(0)}/>
         <Pagination.Prev onClick={() => goTo(currentPage - 1)}/>
-        {[...Array(5).keys()]
-            .map(it => currentPage + (it - 2))
-            .filter(it => it > 0 && it < pages)
-            .map(it => <Pagination.Item key={it} onClick={() => goTo(it)}>{it}</Pagination.Item>)
+        {
+            [...range(startPage, endPage)]
+                .map(it => {
+                    if (it === currentPage) {
+                        return <Pagination.Item className={styles.expandPaginationItem} active key={it} onClick={() => goTo(it)}>{it + 1}</Pagination.Item>
+                    }
+                    return <Pagination.Item className={styles.expandPaginationItem}  key={it} onClick={() => goTo(it)}>{it + 1}</Pagination.Item>;
+                })
         }
         <Pagination.Next onClick={() => goTo(currentPage + 1)}/>
-        <Pagination.Last onClick={() => goTo(pages)}/>
+        <Pagination.Last onClick={() => goTo(pages - 1)}/>
     </Pagination>)
 }
 
@@ -83,6 +106,7 @@ function App() {
     let [page, setPage] = useState(0);
     let [pageUrl, setPageUrl] = useState(null);
     let [goToPageNumber, setGoToPageNumber] = useState("");
+    let [error, setError] = useState(null);
 
     useEffect(() => {
         const params = queryString.parse(location.search);
@@ -92,8 +116,12 @@ function App() {
     useEffect(() => {
         (async () => {
             if (id !== null) {
-                setMetadata(await getMetadata(id));
-                setPage(0);
+                try {
+                    setMetadata(await getMetadata(id));
+                    setPage(0);
+                } catch (e) {
+                    setError(e.message);
+                }
             }
         })();
     }, [id]);
@@ -105,6 +133,19 @@ function App() {
             }
         })();
     }, [id, page]);
+
+    const safeSetPage = (page) => setPage(Math.max(0, Math.min(page, metadata.pages - 1)));
+
+    if (error != null) {
+        return <div className="App">
+            <Container>
+                <Alert variant="danger" style={{marginTop: '1em'}}>
+                    <Alert.Heading>Jejda! Nastala chyba!</Alert.Heading>
+                    <p>{error}</p>
+                </Alert>
+            </Container>
+        </div>
+    }
 
     if (metadata == null) {
         return <Spinner animation="border"/>
@@ -133,20 +174,30 @@ function App() {
                         {metadata.chapters && <>
                             <h4>Kapitoly</h4>
                             <ListGroup style={{marginBottom: '1em'}}>
-                                <Chapters chapters={metadata.chapters} setPageFunction={setPage}/>
+                                <Chapters chapters={metadata.chapters} setPageFunction={safeSetPage}/>
                             </ListGroup>
                         </>}
+
                         <h4>Navigacia</h4>
+                        <Row style={{marginTop: '1em'}}>
+                            <Col>
+                                <DocumentPagination currentPage={page} pages={metadata.pages}
+                                                    goTo={(p) => safeSetPage(p)}/>
+                            </Col>
+                        </Row>
+
+                        <h4>Prejsť na stranu</h4>
                         <Form.Group controlId="formBasicEmail">
-                            <Form.Control type="number" placeholder="cislo strany" value={goToPageNumber}
+                            <Form.Control type="number" placeholder="číslo strany" value={goToPageNumber}
                                           onChange={(ev) => setGoToPageNumber(ev.target.value)}/>
                         </Form.Group>
                         <Button variant="primary" type="submit" onClick={() => {
-                            setPage(parseInt(goToPageNumber));
+                            safeSetPage(parseInt(goToPageNumber) -1 || page);
                             setGoToPageNumber("");
                         }}>
                             Prejst na stranu
                         </Button>
+
                     </Col>
 
                     <Col lg={8}>
@@ -156,11 +207,7 @@ function App() {
                             </Col>
                         </Row>
 
-                        <Row style={{marginTop: '1em'}}>
-                            <Col>
-                                <DocumentPagination currentPage={page} pages={metadata.pages} goTo={(p) => setPage(p)}/>
-                            </Col>
-                        </Row>
+
                     </Col>
                 </Row>
             </Container>
