@@ -56,9 +56,11 @@ function DocumentPagination({pages, currentPage, goTo}) {
             [...range(startPage, endPage)]
                 .map(it => {
                     if (it === currentPage) {
-                        return <Pagination.Item className={styles.expandPaginationItem} active key={it} onClick={() => goTo(it)}>{it + 1}</Pagination.Item>
+                        return <Pagination.Item className={styles.expandPaginationItem} active key={it}
+                                                onClick={() => goTo(it)}>{it + 1}</Pagination.Item>
                     }
-                    return <Pagination.Item className={styles.expandPaginationItem}  key={it} onClick={() => goTo(it)}>{it + 1}</Pagination.Item>;
+                    return <Pagination.Item className={styles.expandPaginationItem} key={it}
+                                            onClick={() => goTo(it)}>{it + 1}</Pagination.Item>;
                 })
         }
         <Pagination.Next onClick={() => goTo(currentPage + 1)}/>
@@ -110,7 +112,16 @@ function App() {
 
     useEffect(() => {
         const params = queryString.parse(location.search);
-        setId(params.id || 'invalid-document');
+        let id = params.id;
+
+        // tuto skryjeme adresu v prehliadaci aby sme zabezpecili bezpecnost
+        if (id.startsWith('L')) {
+            id = atob(id);
+        } else {
+            window.location.search = '?id=' + btoa(id);
+        }
+
+        setId(id || 'invalid-document');
     }, [location]);
 
     useEffect(() => {
@@ -192,7 +203,7 @@ function App() {
                                           onChange={(ev) => setGoToPageNumber(ev.target.value)}/>
                         </Form.Group>
                         <Button variant="primary" type="submit" onClick={() => {
-                            safeSetPage(parseInt(goToPageNumber) -1 || page);
+                            safeSetPage(parseInt(goToPageNumber) - 1 || page);
                             setGoToPageNumber("");
                         }}>
                             Prejst na stranu
