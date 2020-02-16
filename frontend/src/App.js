@@ -9,7 +9,7 @@ import Breadcrumb from "react-bootstrap/Breadcrumb";
 import ListGroup from "react-bootstrap/ListGroup";
 import Pagination from "react-bootstrap/Pagination";
 import Image from "react-bootstrap/Image";
-import {documentTypeName, getMetadata, getPage} from "./api";
+import {getMetadata, getPage} from "./api";
 import Spinner from "react-bootstrap/Spinner";
 import styles from './App.module.css';
 import {useLocation} from "./hooks";
@@ -165,18 +165,11 @@ function App() {
     return (
         <div className="App">
             <Container>
-                <Row style={{padding: '1em 0'}}>
-                    <Col>
-                        <h2>{metadata.author} - {metadata.title}</h2>
-                        <h5>{documentTypeName(metadata.type)}</h5>
-                    </Col>
-                </Row>
                 <Row>
                     <Col>
                         <Breadcrumb>
-                            <Breadcrumb.Item href="#">Kniznicny system</Breadcrumb.Item>
-                            <Breadcrumb.Item href="#">{metadata.title}</Breadcrumb.Item>
-                            <Breadcrumb.Item active>Viewer</Breadcrumb.Item>
+                            <Breadcrumb.Item href="https://alis.uniba.sk:8443/">Súborný online katalóg UK</Breadcrumb.Item>
+                            <Breadcrumb.Item active>Prehliadač</Breadcrumb.Item>
                         </Breadcrumb>
                     </Col>
                 </Row>
@@ -189,7 +182,7 @@ function App() {
                             </ListGroup>
                         </>}
 
-                        <h4>Navigacia</h4>
+                        <h4>Navigácia</h4>
                         <Row style={{marginTop: '1em'}}>
                             <Col>
                                 <DocumentPagination currentPage={page} pages={metadata.pages}
@@ -206,7 +199,7 @@ function App() {
                             safeSetPage(parseInt(goToPageNumber) - 1 || page);
                             setGoToPageNumber("");
                         }}>
-                            Prejst na stranu
+                            Prejsť na stranu
                         </Button>
 
                     </Col>
