@@ -1,61 +1,220 @@
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import {Breadcrumb, Col, Container, Image, ListGroup, Pagination, Row} from "react-bootstrap";
+import Button from "react-bootstrap/Button";
+import Form from "react-bootstrap/Form";
+import Container from "react-bootstrap/Container";
+import Row from "react-bootstrap/Row";
+import Col from "react-bootstrap/Col";
+import Breadcrumb from "react-bootstrap/Breadcrumb";
+import ListGroup from "react-bootstrap/ListGroup";
+import Pagination from "react-bootstrap/Pagination";
+import Image from "react-bootstrap/Image";
+import {getMetadata, getPage} from "./api";
+import Spinner from "react-bootstrap/Spinner";
+import styles from './App.module.css';
+import {useLocation} from "./hooks";
+import queryString from 'query-string';
+import Alert from "react-bootstrap/esm/Alert";
 
+
+/**
+ * Renders list of chapters of the document.
+ */
+function Chapters({chapters, setPageFunction}) {
+    return chapters.map(it => {
+        return <ListGroup.Item action key={it.name}
+                               onClick={() => setPageFunction(it.pages[0])}>{it.name}</ListGroup.Item>
+    })
+}
+
+/**
+ * Renders pagination of the document.
+ */
+function DocumentPagination({pages, currentPage, goTo}) {
+    let startPage = currentPage - 2;
+    let endPage = currentPage + 2;
+
+    if (startPage < 0) {
+        startPage = 0;
+        endPage = 4;
+    }
+    if (endPage > pages - 1) {
+        startPage = pages - 5;
+        endPage = pages - 1;
+    }
+
+    function* range(start, end) {
+        for (let i = start; i <= end; i++) {
+            yield i;
+        }
+    }
+
+    return (<Pagination style={{justifyContent: 'center'}}>
+        <Pagination.First onClick={() => goTo(0)}/>
+        <Pagination.Prev onClick={() => goTo(currentPage - 1)}/>
+        {
+            [...range(startPage, endPage)]
+                .map(it => {
+                    if (it === currentPage) {
+                        return <Pagination.Item className={styles.expandPaginationItem} active key={it}
+                                                onClick={() => goTo(it)}>{it + 1}</Pagination.Item>
+                    }
+                    return <Pagination.Item className={styles.expandPaginationItem} key={it}
+                                            onClick={() => goTo(it)}>{it + 1}</Pagination.Item>;
+                })
+        }
+        <Pagination.Next onClick={() => goTo(currentPage + 1)}/>
+        <Pagination.Last onClick={() => goTo(pages - 1)}/>
+    </Pagination>)
+}
+
+/**
+ * Renders loading while image is loading and then renders the image in non-copiable way.
+ */
+function LoadingImage({src}) {
+    const [loading, setLoading] = useState(true);
+    const [prevSrc, setPrevSrc] = useState(null);
+
+    if (prevSrc !== src) {
+        setLoading(true);
+        setPrevSrc(src);
+    }
+
+    return (
+        <>
+            <div className={styles.imageLoading} style={{display: loading ? 'flex' : 'none'}}>
+                <Spinner animation="border"/>
+            </div>
+            <div style={{display: loading ? 'none' : 'block'}}>
+                <Image className={styles.blockInteraction}
+                       src={src}
+                       rounded
+                       style={{width: '100%'}}
+                       onLoad={() => setLoading(false)}
+                />
+                <div className={styles.blocker}/>
+            </div>
+        </>
+    );
+}
+
+/**
+ * Renders whole viewer application.
+ */
 function App() {
+    let location = useLocation();
+    let [id, setId] = useState(null);
+    let [metadata, setMetadata] = useState(null);
+    let [page, setPage] = useState(0);
+    let [pageUrl, setPageUrl] = useState(null);
+    let [goToPageNumber, setGoToPageNumber] = useState("");
+    let [error, setError] = useState(null);
+
+    useEffect(() => {
+        const params = queryString.parse(location.search);
+        let id = params.id;
+
+        // tuto skryjeme adresu v prehliadaci aby sme zabezpecili bezpecnost
+        if (id.startsWith('L')) {
+            id = atob(id);
+        } else {
+            window.location.search = '?id=' + btoa(id);
+        }
+
+        setId(id || 'invalid-document');
+    }, [location]);
+
+    useEffect(() => {
+        (async () => {
+            if (id !== null) {
+                try {
+                    setMetadata(await getMetadata(id));
+                    setPage(0);
+                } catch (e) {
+                    setError(e.message);
+                }
+            }
+        })();
+    }, [id]);
+
+    useEffect(() => {
+        (async () => {
+            if (id !== null) {
+                setPageUrl(await getPage(id, page));
+            }
+        })();
+    }, [id, page]);
+
+    const safeSetPage = (page) => setPage(Math.max(0, Math.min(page, metadata.pages - 1)));
+
+    if (error != null) {
+        return <div className="App">
+            <Container>
+                <Alert variant="danger" style={{marginTop: '1em'}}>
+                    <Alert.Heading>Jejda! Nastala chyba!</Alert.Heading>
+                    <p>{error}</p>
+                </Alert>
+            </Container>
+        </div>
+    }
+
+    if (metadata == null) {
+        return <Spinner animation="border"/>
+    }
+
     return (
         <div className="App">
             <Container>
-                <Row style={{padding: '1em 0'}}>
-                    <Col>
-                        <h1>Bebej, Jakub - Slovenská štátnosť v rokoch 1939-1945</h1>
-                    </Col>
-                </Row>
                 <Row>
                     <Col>
                         <Breadcrumb>
-                            <Breadcrumb.Item href="#">Kniznicny system</Breadcrumb.Item>
-                            <Breadcrumb.Item href="#">Slovenská štátnosť v rokoch 1939-1945</Breadcrumb.Item>
-                            <Breadcrumb.Item active>Viewer</Breadcrumb.Item>
+                            <Breadcrumb.Item href="https://alis.uniba.sk:8443/">Súborný online katalóg UK</Breadcrumb.Item>
+                            <Breadcrumb.Item active>Prehliadač</Breadcrumb.Item>
                         </Breadcrumb>
                     </Col>
                 </Row>
                 <Row>
                     <Col lg={4}>
-                        <ListGroup style={{marginBottom: '1em'}}>
-                            <ListGroup.Item active>Introduction</ListGroup.Item>
-                            <ListGroup.Item>The origin of Catalan numbersup.</ListGroup.Item>
-                            <ListGroup.Item>Various encounters with Catalan numbers</ListGroup.Item>
-                            <ListGroup.Item>Hankel matrices (and Catalan numbers)</ListGroup.Item>
-                            <ListGroup.Item>Hidden Markov model</ListGroup.Item>
-                            <ListGroup.Item>Implementation</ListGroup.Item>
-                            <ListGroup.Item>What I found out</ListGroup.Item>
-                            <ListGroup.Item>Conclusion</ListGroup.Item>
-                        </ListGroup>
+                        {metadata.chapters && <>
+                            <h4>Kapitoly</h4>
+                            <ListGroup style={{marginBottom: '1em'}}>
+                                <Chapters chapters={metadata.chapters} setPageFunction={safeSetPage}/>
+                            </ListGroup>
+                        </>}
+
+                        <h4>Navigácia</h4>
+                        <Row style={{marginTop: '1em'}}>
+                            <Col>
+                                <DocumentPagination currentPage={page} pages={metadata.pages}
+                                                    goTo={(p) => safeSetPage(p)}/>
+                            </Col>
+                        </Row>
+
+                        <h4>Prejsť na stranu</h4>
+                        <Form.Group controlId="formBasicEmail">
+                            <Form.Control type="number" placeholder="číslo strany" value={goToPageNumber}
+                                          onChange={(ev) => setGoToPageNumber(ev.target.value)}/>
+                        </Form.Group>
+                        <Button variant="primary" type="submit" onClick={() => {
+                            const parsed = parseInt(goToPageNumber);
+                            if(!isNaN(parsed)) {
+                                safeSetPage(parsed - 1);
+                                setGoToPageNumber("");
+                            }
+                        }}>
+                            Prejsť na stranu
+                        </Button>
+
                     </Col>
 
                     <Col lg={8}>
                         <Row>
                             <Col>
-                                <Image src="https://place-hold.it/820x840" rounded style={{width: '100%'}} />
+                                <LoadingImage src={pageUrl}/>
                             </Col>
                         </Row>
 
-                        <Row style={{marginTop: '1em'}}>
-                            <Col>
-                                <Pagination style={{justifyContent: 'center'}}>
-                                    <Pagination.First />
-                                    <Pagination.Prev />
-                                    <Pagination.Item>{1}</Pagination.Item>
-                                    <Pagination.Item>{2}</Pagination.Item>
-                                    <Pagination.Item>{3}</Pagination.Item>
-                                    <Pagination.Item>{4}</Pagination.Item>
-                                    <Pagination.Item>{5}</Pagination.Item>
-                                    <Pagination.Next />
-                                    <Pagination.Last />
-                                </Pagination>
-                            </Col>
-                        </Row>
+
                     </Col>
                 </Row>
             </Container>
