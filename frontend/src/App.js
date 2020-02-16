@@ -196,8 +196,11 @@ function App() {
                                           onChange={(ev) => setGoToPageNumber(ev.target.value)}/>
                         </Form.Group>
                         <Button variant="primary" type="submit" onClick={() => {
-                            safeSetPage(parseInt(goToPageNumber) - 1 || page);
-                            setGoToPageNumber("");
+                            const parsed = parseInt(goToPageNumber);
+                            if(!isNaN(parsed)) {
+                                safeSetPage(parsed - 1);
+                                setGoToPageNumber("");
+                            }
                         }}>
                             Prejsť na stranu
                         </Button>
